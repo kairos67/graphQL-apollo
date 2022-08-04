@@ -1,6 +1,6 @@
-const database = require('./database')
-const { ApolloServer, gql } = require('apollo-server')
-const { equipments, supplies } = require('./database')
+const database = require("./database");
+const { ApolloServer, gql } = require("apollo-server");
+const { equipments, supplies } = require("./database");
 const typeDefs = gql`
   type Query {
     teams: [Team]
@@ -8,8 +8,17 @@ const typeDefs = gql`
     equipments: [Equipment]
     supplies: [Supply]
   }
-  type Mutation{
-    deleteEquipment(id: String):Equipment
+  type Mutation {
+    insertEquipment(
+        id: String,
+        used_by: String,
+        count: Int,
+        new_or_used: String
+    ): Equipment   
+  
+    deleteEquipment(
+      id: String
+      ): Equipment
   }
   type Team {
     id: Int
@@ -25,46 +34,48 @@ const typeDefs = gql`
     id: String
     used_by: String
     count: Int
-    new_or_used: String    
+    new_or_used: String
   }
-  type Supply{
+  type Supply {
     id: String
     team: Int
   }
-`
+`;
 const resolvers = {
   Query: {
-    teams: () => database.teams
-      .map((team) => {
-        team.supplies = database.supplies
-          .filter((supply) => {
-            return supply.team === team.id
-          })
-        return team
+    teams: () =>
+      database.teams.map((team) => {
+        team.supplies = database.supplies.filter((supply) => {
+          return supply.team === team.id;
+        });
+        return team;
       }),
-    team: (parent, args, context, info) => database.teams
-      .filter((team) => {
-        return team.id === args.id
+    team: (parent, args, context, info) =>
+      database.teams.filter((team) => {
+        return team.id === args.id;
       })[0],
     equipments: () => database.equipments,
-    supplies: () => database.supplies
+    supplies: () => database.supplies,
   },
   Mutation: {
+    insertEquipment: (parent, args, context, info) => {
+          database.equipments.push(args)
+          return args
+      },
+  
     deleteEquipment: (parent, args, context, info) => {
-      const deleted = database.equipments
-        .filter((equipment) => {
-          return equipment.id === args.id
-        })[0]
-      database.equipments = database.equipments
-        .filter((equipment) => {
-          return equipment.id !== args.id
-        })
-      return deleted
-    }
-  }
-}
+      const deleted = database.equipments.filter((equipment) => {
+        return equipment.id === args.id;
+      })[0];
+      database.equipments = database.equipments.filter((equipment) => {
+        return equipment.id !== args.id;
+      });
+      return deleted;
+    },
+  },
+};
 
-const server = new ApolloServer({ typeDefs, resolvers })
+const server = new ApolloServer({ typeDefs, resolvers });
 server.listen().then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`)
-})
+  console.log(`🚀  Server ready at ${url}`);
+});
